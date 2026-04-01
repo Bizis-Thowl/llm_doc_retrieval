@@ -12,10 +12,11 @@ dependencies = [
     "beautifulsoup4>=4.14.3",
     "jupyter>=1.1.1",
     "numpy>=2.2.6",
+    "pandas>=2.3.3",
 ]
 
 [project.optional-dependencies]
 dev = []
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/process_extraction"]
+packages = ["src/llm_doc_retrieval"]
