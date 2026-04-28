@@ -210,3 +210,4 @@ uv.lock
 # Add local folders
 output/
 src/test/
+src/retriever/local_data/
