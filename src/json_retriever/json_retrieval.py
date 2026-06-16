@@ -17,7 +17,7 @@ class JSONRetriever():
     def __init__(self, collection_name ="json_embedding"):
         self.collection_name = collection_name
         self.tracer = init_phoenix("json_retriever")
-        self.chunker = doc_chunker.DocChunker()
+        self.chunker = JSONChunker()
         self.embeddings = OllamaEmbeddings(model=os.getenv("EMB_MODEL"),validate_model_on_init=True,base_url=os.getenv("EMB_BASE_URL"))
         self.client = QdrantClient(path=os.getenv("PROJECT_DIR")+"/json_retriever/local_data/embeddings")
         self.create_collection(self.collection_name)
@@ -26,16 +26,16 @@ class JSONRetriever():
             collection_name=self.collection_name,
             embedding=self.embeddings
         )
-        self.embedder = doc_embedder.DocEmbedder(self.embeddings,self.client,self.vector_store)
+        self.embedder = JSONEmbedder(self.embeddings,self.client,self.vector_store)
     
-    def retrieve(self, query, num_results):
-        query_emb = self.embedder.get_embedding(query)
-        response = self.vector_store.similarity_search(query_emb, k=num_results)
+    def retrieve(self, query, num_results=4):
+        #query_emb = self.embedder.get_embedding(query,os.getenv("EMB_MODEL"))
+        response = self.vector_store.similarity_search_with_score(query, k=num_results)
         return response
     
     def embed_json(self,json):
         chunks = self.chunker.chunk_json(json_data)
-        self.embedder.create_vectorstore(self.collection_name)
+        self.create_collection(self.collection_name)
         embedding = self.embedder.create_json_embedding(chunks, collection_name)
 
     def create_collection(self, name:str):
@@ -48,7 +48,8 @@ class JSONRetriever():
 
 
 
-class JSONEmbedder(doc_embedder.DocEmbedder):
+class JSONEmbedder():
+    
     def __init__(self,embeddings,client,vector_store):
         super().__init__()
         self.embeddings = embeddings
@@ -56,8 +57,9 @@ class JSONEmbedder(doc_embedder.DocEmbedder):
         self.vector_store = vector_store
 
     def create_json_embedding(self,json_data, collection_name):
-        
         uuids = [str(uuid4()) for _ in range(len(json_data))]
+        for i, chunk in enumerate(json_data):
+            json_data[i]=str(chunk)
         self.vector_store.add_texts(
             texts=json_data,
             ids=uuids)
@@ -85,7 +87,6 @@ class RetrievalController:
 
 if __name__ == "__main__":
     load_dotenv()
-    json_chunker = JSONChunker()
     with open("src\json_retriever\local_data\Datenmodell-2026-06-10_18-13-17-Entwicklung.json", "r", encoding="utf-8") as f:
         json_data = json.load(f)
    
@@ -96,10 +97,12 @@ if __name__ == "__main__":
     
     json_retriever = JSONRetriever(collection_name)
 
-    json_retriever.embed_json(json_data)
+    #json_retriever.embed_json(json_data)
 
-    json_retriever.retrieve("Wie kann ich ein Objekt anlegen?")
+    response = json_retriever.retrieve("Wie kann ich ein Objekt anlegen?",5)
+    print(response)
 
+    json_retriever.client.close()
     """
 
     
