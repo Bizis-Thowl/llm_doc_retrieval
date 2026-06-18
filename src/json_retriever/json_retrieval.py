@@ -14,8 +14,10 @@ from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, VectorParams
 from langchain_ollama import OllamaEmbeddings
 
-
 class JSONRetriever():
+    """
+    Future work will happen in process_mining_api!
+    """
     def __init__(self, collection_name ="json_embedding"):
         
         self.collection_name = collection_name
@@ -106,6 +108,9 @@ class RetrievalController:
         with open(f"src\json_retriever\local_data\{filename}", "r", encoding="utf-8") as f:
             json_data = json.load(f)
         return json_data
+
+    def re_chunk_json(self, json_data):
+        self.json_retriever.chunker.chunk_json(json_data)
     
     def get_id_label(self, chunk, metadata):
         # Recieves a String of a chunk and its metadata and returns the a label and id
@@ -141,9 +146,7 @@ if __name__ == "__main__":
 
     json_data = controller.load_data("Datenmodell-2026-06-10_18-13-17-Entwicklung.json")
     
-    
-    
-    controller.json_retriever.chunker.chunk_json(json_data)
+    controller.re_chunk_json(json_data)
 
     #json_retriever.embed_json(json_data)
 
